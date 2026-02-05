@@ -4,9 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-function getApiUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-}
+import { getApiUrl } from "../../_lib/apiUrl";
 
 export default function AuthLoginPage() {
   const router = useRouter();

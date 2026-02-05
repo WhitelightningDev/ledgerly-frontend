@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { processScanQueueUploads } from "../_lib/scanUploader";
+import { getApiUrl } from "../../_lib/apiUrl";
 import {
   ArrowLeftRightIcon,
   BarChart3Icon,
@@ -21,10 +22,6 @@ import {
   SettingsIcon,
   Wand2Icon,
 } from "./lucide";
-
-function getApiUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-}
 
 function getToken() {
   return typeof window === "undefined"

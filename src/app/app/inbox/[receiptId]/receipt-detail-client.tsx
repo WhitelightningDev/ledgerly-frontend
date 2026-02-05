@@ -7,10 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { findLearnedDefaults, upsertLearnedDefaults } from "../../_lib/learnedDefaults";
 import { firstMatchingRule, loadRules, type Rule } from "../../_lib/rules";
-
-function getApiUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-}
+import { getApiUrl } from "../../../_lib/apiUrl";
 
 function getToken() {
   return typeof window === "undefined"

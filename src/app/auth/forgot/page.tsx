@@ -3,9 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-function getApiUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-}
+import { getApiUrl } from "../../_lib/apiUrl";
 
 export default function ForgotPasswordPage() {
   const apiUrl = useMemo(() => getApiUrl(), []);
@@ -69,4 +67,3 @@ export default function ForgotPasswordPage() {
     </main>
   );
 }
-

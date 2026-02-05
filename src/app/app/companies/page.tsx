@@ -5,9 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { loadCompanyProfile, saveCompanyProfile } from "../_lib/companyProfile";
 import { createBlankContact, loadContacts, saveContacts, type Contact } from "../_lib/contacts";
 
-function getApiUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-}
+import { getApiUrl } from "../../_lib/apiUrl";
 
 function getToken() {
   return typeof window === "undefined"
@@ -356,4 +354,3 @@ export default function CompaniesPage() {
     </main>
   );
 }
-

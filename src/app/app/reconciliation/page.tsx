@@ -6,9 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { normalizeHeader, parseCsv } from "../_lib/csv";
 import { loadFromLocalStorage, saveToLocalStorage, uuid } from "../_lib/localStore";
 
-function getApiUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-}
+import { getApiUrl } from "../../_lib/apiUrl";
 
 function getToken() {
   return typeof window === "undefined"
