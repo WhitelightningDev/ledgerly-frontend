@@ -34,7 +34,7 @@ export default function CompaniesPage() {
   const [profileCompanyId, setProfileCompanyId] = useState<string>("");
   const [legalName, setLegalName] = useState("");
   const [taxId, setTaxId] = useState("");
-  const [defaultCurrency, setDefaultCurrency] = useState("USD");
+  const [defaultCurrency, setDefaultCurrency] = useState("ZAR");
   const [defaultTaxTreatment, setDefaultTaxTreatment] = useState("");
   const [paymentTermsDays, setPaymentTermsDays] = useState("30");
 
@@ -52,7 +52,7 @@ export default function CompaniesPage() {
     const p = loadCompanyProfile(profileCompanyId);
     setLegalName(p.legal_name);
     setTaxId(p.tax_id);
-    setDefaultCurrency(p.default_currency || "USD");
+    setDefaultCurrency(p.default_currency || "ZAR");
     setDefaultTaxTreatment(p.default_tax_treatment);
     setPaymentTermsDays(p.payment_terms_days == null ? "" : String(p.payment_terms_days));
     setContacts(loadContacts(profileCompanyId));
@@ -94,7 +94,7 @@ export default function CompaniesPage() {
       company_id: profileCompanyId,
       legal_name: legalName,
       tax_id: taxId,
-      default_currency: defaultCurrency || "USD",
+      default_currency: defaultCurrency || "ZAR",
       default_tax_treatment: defaultTaxTreatment,
       payment_terms_days: paymentTermsDays ? Number(paymentTermsDays) : null,
     });

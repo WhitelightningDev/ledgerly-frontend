@@ -1,5 +1,5 @@
-export function parseCsv(text: string): string[][] {
-  // Minimal CSV parser: supports quoted fields and commas/newlines.
+function parseDelimited(text: string, delimiter: string): string[][] {
+  // Minimal delimited-text parser: supports quoted fields and delimiter/newlines.
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";
@@ -36,7 +36,7 @@ export function parseCsv(text: string): string[][] {
       inQuotes = true;
       continue;
     }
-    if (c === ",") {
+    if (c === delimiter) {
       pushField();
       continue;
     }
@@ -54,7 +54,21 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
+function detectDelimiter(text: string): string {
+  const firstLine = (text || "").split(/\r?\n/, 1)[0] ?? "";
+  const comma = (firstLine.match(/,/g) || []).length;
+  const semi = (firstLine.match(/;/g) || []).length;
+  const tab = (firstLine.match(/\t/g) || []).length;
+  if (tab >= comma && tab >= semi && tab > 0) return "\t";
+  if (semi > comma) return ";";
+  return ",";
+}
+
+export function parseCsv(text: string): string[][] {
+  const delimiter = detectDelimiter(text);
+  return parseDelimited(text, delimiter);
+}
+
 export function normalizeHeader(h: string): string {
   return (h || "").trim().toLowerCase().replace(/\s+/g, "_");
 }
-

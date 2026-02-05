@@ -28,26 +28,30 @@ export async function listScanQueue(): Promise<ScanQueueItem[]> {
     run: (s) => s.getAll(),
   });
   const arr = Array.isArray(raw) ? raw : [];
-  return arr.map((r: any) => {
+  return arr.map((row) => {
+    const r = (typeof row === "object" && row != null ? (row as Record<string, unknown>) : {}) as Record<
+      string,
+      unknown
+    >;
     const status =
-      r?.status === "queued" ||
-      r?.status === "uploading" ||
-      r?.status === "uploaded" ||
-      r?.status === "error"
+      r.status === "queued" ||
+      r.status === "uploading" ||
+      r.status === "uploaded" ||
+      r.status === "error"
         ? (r.status as ScanItemStatus)
         : ("queued" as const);
     return {
-      id: String(r?.id ?? ""),
-      company_id: String(r?.company_id ?? ""),
-      session_id: String(r?.session_id ?? "legacy"),
-      doc_type: r?.doc_type === "invoice" ? "invoice" : "receipt",
-      created_at: String(r?.created_at ?? new Date().toISOString()),
-      file_name: String(r?.file_name ?? "scan.jpg"),
-      mime_type: String(r?.mime_type ?? "image/jpeg"),
-      blob: (r?.blob as Blob | null) ?? null,
+      id: String(r.id ?? ""),
+      company_id: String(r.company_id ?? ""),
+      session_id: String(r.session_id ?? "legacy"),
+      doc_type: r.doc_type === "invoice" ? "invoice" : "receipt",
+      created_at: String(r.created_at ?? new Date().toISOString()),
+      file_name: String(r.file_name ?? "scan.jpg"),
+      mime_type: String(r.mime_type ?? "image/jpeg"),
+      blob: (r.blob as Blob | null) ?? null,
       status,
-      error: (r?.error as string | null) ?? null,
-      remote_id: (r?.remote_id as string | null) ?? null,
+      error: (r.error as string | null) ?? null,
+      remote_id: (r.remote_id as string | null) ?? null,
     } satisfies ScanQueueItem;
   });
 }

@@ -499,16 +499,15 @@ function QueueRow({
   onRetry: () => void;
   onRemove: () => void;
 }) {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!item.blob) {
-      setUrl(null);
-      return;
-    }
-    const u = URL.createObjectURL(item.blob);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
+  const url = useMemo(() => {
+    if (!item.blob) return null;
+    return URL.createObjectURL(item.blob);
   }, [item.blob]);
+
+  useEffect(() => {
+    if (!url) return;
+    return () => URL.revokeObjectURL(url);
+  }, [url]);
 
   const badge =
     item.status === "queued"

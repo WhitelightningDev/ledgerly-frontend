@@ -59,6 +59,7 @@ const navGroups: Array<{
     items: [
       { href: "/app/transactions", label: "Transactions", Icon: BarChart3Icon },
       { href: "/app/reconciliation", label: "Reconciliation", Icon: ArrowLeftRightIcon },
+      { href: "/app/catch-up", label: "Catch-up", Icon: CheckCircleIcon },
       { href: "/app/search", label: "Search", Icon: SearchIcon },
     ],
   },
@@ -142,7 +143,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [apiUrl]);
 
   useEffect(() => {
-    function handler() {
+    function handler(ev: Event) {
+      const maybe = ev as CustomEvent<{ type?: "receipt" | "invoice" }>;
+      const nextType = maybe?.detail?.type;
+      if (nextType === "receipt" || nextType === "invoice") {
+        setUploadType(nextType);
+      }
       setShowUpload(true);
     }
     window.addEventListener("ledgerly:upload", handler);

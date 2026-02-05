@@ -54,7 +54,7 @@ export default function ReportsPage() {
   const router = useRouter();
   const apiUrl = useMemo(() => getApiUrl(), []);
   const token = useMemo(() => getToken(), []);
-  const [currency] = useState("USD");
+  const [currency] = useState("ZAR");
 
   const [month, setMonth] = useState(() => yyyyMm(new Date()));
   const [data, setData] = useState<FinancialSummary | null>(null);

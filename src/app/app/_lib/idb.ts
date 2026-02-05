@@ -3,6 +3,15 @@ type IdbStore = {
   keyPath: string;
 };
 
+function isIdbRequest<T>(value: unknown): value is IDBRequest<T> {
+  if (typeof value !== "object" || value == null) return false;
+  return (
+    "onsuccess" in value &&
+    "onerror" in value &&
+    "result" in value
+  );
+}
+
 export async function openDb(args: {
   dbName: string;
   version: number;
@@ -34,9 +43,9 @@ export async function withStore<T>(args: {
     const store = tx.objectStore(args.storeName);
     try {
       const res = await args.run(store);
-      if (res && typeof (res as any).onsuccess === "function") {
-        (res as any).onsuccess = () => resolve((res as any).result as T);
-        (res as any).onerror = () => reject((res as any).error);
+      if (isIdbRequest<T>(res)) {
+        res.onsuccess = () => resolve(res.result);
+        res.onerror = () => reject(res.error);
       } else {
         resolve(res as T);
       }
@@ -46,4 +55,3 @@ export async function withStore<T>(args: {
     tx.onerror = () => reject(tx.error);
   });
 }
-

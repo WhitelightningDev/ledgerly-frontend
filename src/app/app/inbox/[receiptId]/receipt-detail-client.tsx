@@ -80,7 +80,7 @@ export default function ReceiptDetailClient({
 
   const [vendor, setVendor] = useState("");
   const [receiptDate, setReceiptDate] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("ZAR");
   const [subtotalAmount, setSubtotalAmount] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
   const [taxAmount, setTaxAmount] = useState("");
@@ -135,7 +135,7 @@ export default function ReceiptDetailClient({
 
       setVendor(rData.vendor ?? "");
       setReceiptDate(rData.receipt_date ? rData.receipt_date.slice(0, 10) : "");
-      setCurrency(rData.currency || "USD");
+      setCurrency(rData.currency || "ZAR");
       setSubtotalAmount(
         rData.subtotal_amount == null ? "" : String(rData.subtotal_amount),
       );

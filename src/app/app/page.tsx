@@ -5,6 +5,20 @@ import { useEffect, useMemo, useState } from "react";
 
 import { getApiUrl } from "../_lib/apiUrl";
 
+function formatMoney(currency: string, amount: number | null) {
+  if (amount == null) return "—";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+    }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
+}
+
+const DEFAULT_CCY = "ZAR";
+
 function getToken() {
   return typeof window === "undefined"
     ? null
@@ -185,7 +199,7 @@ export default function AppHomePage() {
           value={
             loading || !stats
               ? "—"
-              : `${stats.posted_month_count} • $${stats.posted_month_total.toFixed(2)}`
+              : `${stats.posted_month_count} • ${formatMoney(DEFAULT_CCY, stats.posted_month_total)}`
           }
           href="/app/transactions"
           hint="View posted receipts"
@@ -195,7 +209,7 @@ export default function AppHomePage() {
           value={
             loading || !stats
               ? "—"
-              : `${stats.invoices_uploaded_month_count} • $${stats.invoices_month_total.toFixed(2)}`
+              : `${stats.invoices_uploaded_month_count} • ${formatMoney(DEFAULT_CCY, stats.invoices_month_total)}`
           }
           href="/app/invoices"
           hint="View invoices"
@@ -254,7 +268,7 @@ export default function AppHomePage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                    {e.total_amount == null ? "—" : `$${e.total_amount.toFixed(2)}`}
+                    {formatMoney(DEFAULT_CCY, e.total_amount)}
                   </div>
                   <button
                     type="button"
@@ -383,7 +397,7 @@ function MoneyFlowChartCard({
                 Money in
               </div>
               <div className="text-zinc-600 dark:text-zinc-300">
-                ${safeIn.toFixed(2)}
+                {formatMoney(DEFAULT_CCY, safeIn)}
               </div>
             </div>
             <div className="mt-2 h-3 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
@@ -401,7 +415,7 @@ function MoneyFlowChartCard({
                 Money out
               </div>
               <div className="text-zinc-600 dark:text-zinc-300">
-                ${safeOut.toFixed(2)}
+                {formatMoney(DEFAULT_CCY, safeOut)}
               </div>
             </div>
             <div className="mt-2 h-3 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">

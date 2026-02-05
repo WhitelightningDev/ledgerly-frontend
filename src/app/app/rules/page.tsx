@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { createBlankRule, loadRules, saveRules, type Rule } from "../_lib/rules";
 
@@ -11,15 +11,24 @@ function getCompanyId() {
 }
 
 export default function RulesPage() {
-  const companyId = useMemo(() => getCompanyId() ?? "", []);
+  const initialCompanyId = getCompanyId() ?? "";
+  const [companyId, setCompanyId] = useState(initialCompanyId);
 
-  const [rules, setRules] = useState<Rule[]>([]);
+  const [rules, setRules] = useState<Rule[]>(() =>
+    initialCompanyId ? loadRules(initialCompanyId) : [],
+  );
   const [draft, setDraft] = useState<Rule>(createBlankRule());
 
   useEffect(() => {
-    if (!companyId) return;
-    setRules(loadRules(companyId));
-  }, [companyId]);
+    function onCompanyChanged() {
+      const nextCompanyId = getCompanyId() ?? "";
+      setCompanyId(nextCompanyId);
+      setRules(nextCompanyId ? loadRules(nextCompanyId) : []);
+      setDraft(createBlankRule());
+    }
+    window.addEventListener("ledgerly:companyChanged", onCompanyChanged);
+    return () => window.removeEventListener("ledgerly:companyChanged", onCompanyChanged);
+  }, []);
 
   function persist(next: Rule[]) {
     setRules(next);

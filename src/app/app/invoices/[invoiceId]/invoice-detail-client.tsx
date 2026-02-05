@@ -89,7 +89,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
   const [clientName, setClientName] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("ZAR");
   const [subtotalAmount, setSubtotalAmount] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
   const [taxAmount, setTaxAmount] = useState("");
@@ -139,7 +139,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
       setClientName(invData.client_name || "");
       setInvoiceNumber(invData.invoice_number || "");
       setInvoiceDate(invData.invoice_date ? invData.invoice_date.slice(0, 10) : "");
-      setCurrency(invData.currency || "USD");
+      setCurrency(invData.currency || "ZAR");
       setSubtotalAmount(
         invData.subtotal_amount == null ? "" : String(invData.subtotal_amount),
       );

@@ -18,7 +18,7 @@ export function loadCompanyProfile(companyId: string): CompanyProfile {
     company_id: companyId,
     legal_name: "",
     tax_id: "",
-    default_currency: "USD",
+    default_currency: "ZAR",
     default_tax_treatment: "",
     payment_terms_days: 30,
   });
@@ -27,4 +27,3 @@ export function loadCompanyProfile(companyId: string): CompanyProfile {
 export function saveCompanyProfile(companyId: string, profile: CompanyProfile): void {
   saveToLocalStorage(key(companyId), profile);
 }
-
