@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { findLearnedDefaults, upsertLearnedDefaults } from "../../_lib/learnedDefaults";
 import { firstMatchingRule, loadRules, type Rule } from "../../_lib/rules";
 
 function getApiUrl() {
@@ -56,6 +57,13 @@ type AuditEvent = {
 
 type ApiError = { detail?: string };
 
+function isEmptyLike(value: string | null | undefined): boolean {
+  const v = (value ?? "").trim();
+  if (!v) return true;
+  const lower = v.toLowerCase();
+  return lower === "unknown" || lower === "unknown vendor" || lower === "—";
+}
+
 export default function ReceiptDetailClient({
   receiptId,
 }: {
@@ -87,6 +95,7 @@ export default function ReceiptDetailClient({
   const [rejectReason, setRejectReason] = useState("");
   const [appliedRule, setAppliedRule] = useState<Rule | null>(null);
   const [ruleSuggestsAutoApprove, setRuleSuggestsAutoApprove] = useState(false);
+  const [appliedDefaults, setAppliedDefaults] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -144,36 +153,66 @@ export default function ReceiptDetailClient({
       // Apply first matching local rule when item is awaiting review.
       const companyId = getCompanyId();
       if (companyId && (rData.status === "received" || rData.status === "needs_review")) {
+        setAppliedDefaults(false);
+
         const rules = loadRules(companyId);
         const match = firstMatchingRule({
           rules,
           appliesTo: "receipt",
           counterpartyName: rData.vendor ?? "",
         });
-        if (match) {
-          setAppliedRule(match);
-          if (match.set_category && !(rData.category_suggestion ?? "").trim()) {
-            setCategory(match.set_category);
+        setAppliedRule(match);
+        const total = rData.total_amount ?? null;
+        setRuleSuggestsAutoApprove(
+          match?.auto_approve_max_total != null &&
+            total != null &&
+            total <= match.auto_approve_max_total,
+        );
+
+        // Rules win, then learned defaults fill gaps.
+        if (match?.set_category && isEmptyLike(rData.category_suggestion)) {
+          setCategory(match.set_category);
+        }
+        if (match?.set_tax_treatment && isEmptyLike(rData.tax_suggestion)) {
+          setTaxTreatment(match.set_tax_treatment);
+        }
+        if (match?.set_payment_method && isEmptyLike(rData.payment_method)) {
+          setPaymentMethod(match.set_payment_method);
+        }
+        if (match?.set_document_type && isEmptyLike(rData.document_type)) {
+          setDocumentType(match.set_document_type);
+        }
+
+        const defaults = findLearnedDefaults({
+          companyId,
+          counterpartyName: rData.vendor ?? "",
+        });
+        if (defaults) {
+          let applied = false;
+          if (defaults.category && isEmptyLike(rData.category_suggestion) && !match?.set_category) {
+            setCategory(defaults.category);
+            applied = true;
           }
-          if (match.set_tax_treatment && !(rData.tax_suggestion ?? "").trim()) {
-            setTaxTreatment(match.set_tax_treatment);
+          if (defaults.tax_treatment && isEmptyLike(rData.tax_suggestion) && !match?.set_tax_treatment) {
+            setTaxTreatment(defaults.tax_treatment);
+            applied = true;
           }
-          if (match.set_document_type && !(rData.document_type ?? "").trim()) {
-            setDocumentType(match.set_document_type);
+          if (defaults.payment_method && isEmptyLike(rData.payment_method) && !match?.set_payment_method) {
+            setPaymentMethod(defaults.payment_method);
+            applied = true;
           }
-          const total = rData.total_amount ?? null;
-          setRuleSuggestsAutoApprove(
-            match.auto_approve_max_total != null &&
-              total != null &&
-              total <= match.auto_approve_max_total,
-          );
+          if (defaults.document_type && isEmptyLike(rData.document_type) && !match?.set_document_type) {
+            setDocumentType(defaults.document_type);
+            applied = true;
+          }
+          setAppliedDefaults(applied);
         } else {
-          setAppliedRule(null);
-          setRuleSuggestsAutoApprove(false);
+          setAppliedDefaults(false);
         }
       } else {
         setAppliedRule(null);
         setRuleSuggestsAutoApprove(false);
+        setAppliedDefaults(false);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load receipt.");
@@ -235,6 +274,19 @@ export default function ReceiptDetailClient({
       const data = (await res.json()) as Receipt | ApiError;
       if (!res.ok) throw new Error((data as ApiError).detail || "Approve failed.");
       await load();
+      const companyId = getCompanyId();
+      if (companyId && vendor.trim()) {
+        upsertLearnedDefaults({
+          companyId,
+          counterpartyName: vendor,
+          defaults: {
+            category: category || undefined,
+            tax_treatment: taxTreatment || undefined,
+            payment_method: paymentMethod || undefined,
+            document_type: documentType || undefined,
+          },
+        });
+      }
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Approve failed.");
@@ -418,6 +470,15 @@ export default function ReceiptDetailClient({
               </button>
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {appliedDefaults ? (
+        <div className="mt-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-blue-800 dark:text-blue-200">
+          <div className="font-medium">Suggested from past approvals</div>
+          <div className="mt-1 text-xs text-blue-800/80 dark:text-blue-200/80">
+            Defaults filled in based on previous approvals for this vendor.
+          </div>
         </div>
       ) : null}
 

@@ -139,6 +139,15 @@ export default function RulesPage() {
                 />
               </label>
               <label className="block text-sm">
+                <span className="text-zinc-600 dark:text-zinc-300">Set payment method</span>
+                <input
+                  value={draft.set_payment_method}
+                  onChange={(e) => setDraft({ ...draft, set_payment_method: e.target.value })}
+                  placeholder="Card / Cash"
+                  className="mt-2 block h-11 w-full rounded-xl border border-black/10 bg-white px-4 text-sm text-zinc-950 shadow-sm outline-none focus:border-zinc-950 dark:border-white/10 dark:bg-black dark:text-zinc-50 dark:focus:border-white"
+                />
+              </label>
+              <label className="block text-sm">
                 <span className="text-zinc-600 dark:text-zinc-300">Document type</span>
                 <input
                   value={draft.set_document_type}
@@ -219,6 +228,7 @@ export default function RulesPage() {
                       {r.set_category ? <Pill label={`Category: ${r.set_category}`} /> : null}
                       {r.set_tax_treatment ? <Pill label={`Tax: ${r.set_tax_treatment}`} /> : null}
                       {r.set_account_code ? <Pill label={`Acct: ${r.set_account_code}`} /> : null}
+                      {r.set_payment_method ? <Pill label={`Pay: ${r.set_payment_method}`} /> : null}
                       {r.set_document_type ? <Pill label={`Type: ${r.set_document_type}`} /> : null}
                       {r.auto_approve_max_total != null ? (
                         <Pill label={`Auto ≤ ${r.auto_approve_max_total}`} />
@@ -242,4 +252,3 @@ function Pill({ label }: { label: string }) {
     </span>
   );
 }
-

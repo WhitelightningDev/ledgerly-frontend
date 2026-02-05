@@ -4,6 +4,24 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { processScanQueueUploads } from "../_lib/scanUploader";
+import {
+  ArrowLeftRightIcon,
+  BarChart3Icon,
+  Building2Icon,
+  CameraIcon,
+  CheckCircleIcon,
+  ChevronDownIcon,
+  FileTextIcon,
+  FolderIcon,
+  InboxIcon,
+  LayoutDashboardIcon,
+  PlugIcon,
+  SearchIcon,
+  SettingsIcon,
+  Wand2Icon,
+} from "./lucide";
+
 function getApiUrl() {
   return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 }
@@ -20,20 +38,49 @@ type Company = { id: string; name: string; industry: string | null };
 
 type Me = { user_id: string; email: string; name: string };
 
-const navItems: Array<{ href: string; label: string }> = [
-  { href: "/app", label: "Dashboard" },
-  { href: "/app/inbox", label: "Inbox" },
-  { href: "/app/invoices", label: "Invoices" },
-  { href: "/app/transactions", label: "Transactions" },
-  { href: "/app/approvals", label: "Approvals" },
-  { href: "/app/search", label: "Search" },
-  { href: "/app/reconciliation", label: "Reconciliation" },
-  { href: "/app/reports", label: "Reports" },
-  { href: "/app/integrations", label: "Integrations" },
-  { href: "/app/companies", label: "Company" },
-  { href: "/app/rules", label: "Rules" },
-  { href: "/app/settings", label: "Settings" },
+type NavItem = { href: string; label: string; Icon: React.ComponentType<{ className?: string }> };
+
+const navGroups: Array<{
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  items: NavItem[];
+}> = [
+  {
+    label: "Core",
+    Icon: FolderIcon,
+    items: [
+      { href: "/app", label: "Dashboard", Icon: LayoutDashboardIcon },
+      { href: "/app/scan", label: "Scan", Icon: CameraIcon },
+      { href: "/app/inbox", label: "Inbox", Icon: InboxIcon },
+      { href: "/app/invoices", label: "Invoices", Icon: FileTextIcon },
+      { href: "/app/approvals", label: "Approvals", Icon: CheckCircleIcon },
+    ],
+  },
+  {
+    label: "Operations",
+    Icon: FolderIcon,
+    items: [
+      { href: "/app/transactions", label: "Transactions", Icon: BarChart3Icon },
+      { href: "/app/reconciliation", label: "Reconciliation", Icon: ArrowLeftRightIcon },
+      { href: "/app/search", label: "Search", Icon: SearchIcon },
+    ],
+  },
+  {
+    label: "Management",
+    Icon: FolderIcon,
+    items: [
+      { href: "/app/reports", label: "Reports", Icon: BarChart3Icon },
+      { href: "/app/integrations", label: "Integrations", Icon: PlugIcon },
+      { href: "/app/companies", label: "Company", Icon: Building2Icon },
+      { href: "/app/rules", label: "Rules", Icon: Wand2Icon },
+      { href: "/app/settings", label: "Settings", Icon: SettingsIcon },
+    ],
+  },
 ];
+
+function isActive(pathname: string, href: string) {
+  return href === "/app" ? pathname === "/app" : pathname.startsWith(href);
+}
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -84,6 +131,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       }
     })();
   }, [apiUrl, router]);
+
+  useEffect(() => {
+    const t = getToken();
+    if (!t) return;
+    void processScanQueueUploads({ apiUrl, token: t });
+    function onOnline() {
+      const nextToken = getToken();
+      if (nextToken) void processScanQueueUploads({ apiUrl, token: nextToken });
+    }
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [apiUrl]);
 
   useEffect(() => {
     function handler() {
@@ -171,25 +230,52 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/app" className="px-2 text-base font-semibold tracking-tight">
             Ledgerly
           </Link>
-          <nav className="mt-6 space-y-1">
-            {navItems.map((item) => {
-              const active =
-                item.href === "/app"
-                  ? pathname === "/app"
-                  : pathname.startsWith(item.href);
+          <nav className="mt-6 space-y-2">
+            {navGroups.map((group) => {
+              const groupHasActive = group.items.some((it) =>
+                isActive(pathname, it.href),
+              );
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={[
-                    "block rounded-xl px-2 py-2 text-sm font-medium transition-colors",
-                    active
-                      ? "bg-zinc-950 text-white dark:bg-white dark:text-black"
-                      : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-zinc-50",
-                  ].join(" ")}
+                <details
+                  key={group.label}
+                  open={groupHasActive}
+                  className="group rounded-xl border border-transparent group-open:border-black/5 dark:group-open:border-white/10"
                 >
-                  {item.label}
-                </Link>
+                  <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl px-2 py-2 text-xs font-semibold tracking-wide text-zinc-600 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-white/5">
+                    <span className="inline-flex items-center gap-2">
+                      <group.Icon className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                      {group.label}
+                    </span>
+                    <ChevronDownIcon className="h-4 w-4 text-zinc-400 transition-transform group-open:rotate-180 dark:text-zinc-500" />
+                  </summary>
+                  <div className="mt-1 space-y-1 border-l border-black/10 pl-2 dark:border-white/10">
+                    {group.items.map((item) => {
+                      const active = isActive(pathname, item.href);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={[
+                            "flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-medium transition-colors",
+                            active
+                              ? "bg-zinc-950 text-white dark:bg-white dark:text-black"
+                              : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-zinc-50",
+                          ].join(" ")}
+                        >
+                          <item.Icon
+                            className={[
+                              "h-4 w-4",
+                              active
+                                ? "text-white dark:text-black"
+                                : "text-zinc-500 dark:text-zinc-400",
+                            ].join(" ")}
+                          />
+                          <span className="truncate">{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </details>
               );
             })}
           </nav>
@@ -259,7 +345,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href="/app/scan"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-50 dark:border-white/10 dark:bg-black dark:text-zinc-50 dark:hover:bg-white/5"
+                >
+                  Scan
+                </Link>
                 <button
                   onClick={() => setShowUpload(true)}
                   disabled={uploading}
@@ -350,27 +442,40 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <nav className="mt-4 space-y-1">
-              {navItems.map((item) => {
-                const active =
-                  item.href === "/app"
-                    ? pathname === "/app"
-                    : pathname.startsWith(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setShowMobileNav(false)}
-                    className={[
-                      "block rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                      active
-                        ? "bg-zinc-950 text-white dark:bg-white dark:text-black"
-                        : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-zinc-50",
-                    ].join(" ")}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+              {navGroups.map((group) => (
+                <div key={group.label} className="space-y-1">
+                  <div className="flex items-center gap-2 px-3 pt-3 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    <group.Icon className="h-3.5 w-3.5" />
+                    {group.label}
+                  </div>
+                  {group.items.map((item) => {
+                    const active = isActive(pathname, item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setShowMobileNav(false)}
+                        className={[
+                          "flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                          active
+                            ? "bg-zinc-950 text-white dark:bg-white dark:text-black"
+                            : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-zinc-50",
+                        ].join(" ")}
+                      >
+                        <item.Icon
+                          className={[
+                            "h-4 w-4",
+                            active
+                              ? "text-white dark:text-black"
+                              : "text-zinc-500 dark:text-zinc-400",
+                          ].join(" ")}
+                        />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
             </nav>
 
             <div className="mt-6 border-t border-black/10 pt-4 dark:border-white/10">

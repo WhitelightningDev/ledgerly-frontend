@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { findLearnedDefaults, upsertLearnedDefaults } from "../../_lib/learnedDefaults";
 import { firstMatchingRule, loadRules, type Rule } from "../../_lib/rules";
 
 function getApiUrl() {
@@ -24,6 +25,13 @@ function getCompanyId() {
 }
 
 type ApiError = { detail?: string };
+
+function isEmptyLike(value: string | null | undefined): boolean {
+  const v = (value ?? "").trim();
+  if (!v) return true;
+  const lower = v.toLowerCase();
+  return lower === "unknown" || lower === "unknown client" || lower === "—";
+}
 
 type Invoice = {
   id: string;
@@ -94,6 +102,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
   const [rejectReason, setRejectReason] = useState("");
   const [appliedRule, setAppliedRule] = useState<Rule | null>(null);
   const [ruleSuggestsAutoApprove, setRuleSuggestsAutoApprove] = useState(false);
+  const [appliedDefaults, setAppliedDefaults] = useState(false);
 
   async function load() {
     if (!token) return;
@@ -148,6 +157,7 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
         (invData.workflow_status === "received" ||
           invData.workflow_status === "needs_review")
       ) {
+        setAppliedDefaults(false);
         const rules = loadRules(companyId);
         const match = firstMatchingRule({
           rules,
@@ -169,9 +179,29 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
           setAppliedRule(null);
           setRuleSuggestsAutoApprove(false);
         }
+
+        const defaults = findLearnedDefaults({
+          companyId,
+          counterpartyName: invData.client_name ?? "",
+        });
+        if (defaults) {
+          let applied = false;
+          if (
+            defaults.document_type &&
+            isEmptyLike(invData.document_type) &&
+            !(match?.set_document_type || "").trim()
+          ) {
+            setDocumentType(defaults.document_type);
+            applied = true;
+          }
+          setAppliedDefaults(applied);
+        } else {
+          setAppliedDefaults(false);
+        }
       } else {
         setAppliedRule(null);
         setRuleSuggestsAutoApprove(false);
+        setAppliedDefaults(false);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load invoice.");
@@ -241,6 +271,16 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
       const data = (await res.json()) as Invoice | ApiError;
       if (!res.ok) throw new Error((data as ApiError).detail || "Approve failed.");
       await load();
+      const companyId = getCompanyId();
+      if (companyId && clientName.trim()) {
+        upsertLearnedDefaults({
+          companyId,
+          counterpartyName: clientName,
+          defaults: {
+            document_type: documentType || undefined,
+          },
+        });
+      }
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Approve failed.");
@@ -426,6 +466,15 @@ export default function InvoiceDetailClient({ invoiceId }: { invoiceId: string }
               </button>
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {appliedDefaults ? (
+        <div className="mt-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-blue-800 dark:text-blue-200">
+          <div className="font-medium">Suggested from past approvals</div>
+          <div className="mt-1 text-xs text-blue-800/80 dark:text-blue-200/80">
+            Defaults filled in based on previous approvals for this client.
+          </div>
         </div>
       ) : null}
 

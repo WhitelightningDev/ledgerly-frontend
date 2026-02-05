@@ -15,6 +15,7 @@ export type Rule = {
   set_category: string;
   set_tax_treatment: string;
   set_account_code: string;
+  set_payment_method: string;
   set_document_type: string;
   auto_approve_max_total: number | null;
 
@@ -46,6 +47,7 @@ export function createBlankRule(): Rule {
     set_category: "",
     set_tax_treatment: "",
     set_account_code: "",
+    set_payment_method: "",
     set_document_type: "",
     auto_approve_max_total: null,
     created_at: now,
@@ -84,4 +86,3 @@ export function firstMatchingRule(args: {
   }
   return null;
 }
-
